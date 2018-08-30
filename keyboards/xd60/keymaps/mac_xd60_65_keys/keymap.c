@@ -48,7 +48,7 @@ void set_rgb(void) {
     int g = 0x00;
     int b = (layer == L_FUNCTION) ? 0xff : 0x00;
 
-    if (!rgblight_config.enable) rgblight_ enable();
+    if (!rgblight_config.enable) rgblight_enable();
 
     rgblight_mode(1);
     rgblight_setrgb(r, g, b);
