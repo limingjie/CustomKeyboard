@@ -20,7 +20,7 @@
 
 // Status Variables
 static uint8_t layer = L_QWERTY;
-static uint8_t caps  = false;
+static uint8_t caps  = 0;
 
 // Used to check underglow status
 extern rgblight_config_t rgblight_config;
@@ -42,31 +42,54 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______,  _______, _______,                             _______,                            _______, _______,   KC_MS_L, KC_MS_D, KC_MS_R)
 };
 
-// Set underglow color base on status
-void set_rgb(void) {
-    int r = (caps != 0) ? 0xff : 0x00;
-    int g = 0x00;
-    int b = (layer == L_FUNCTION) ? 0xff : 0x00;
+// Set underglow color base on caps lock state and layer
+// Use _noeeprom methods to prevent underglow from enabling on restart.
+// Color predefinitions in /quantum/rgblight_list.h
+void set_underglow(void) {
+    if (layer == L_QWERTY && caps == 0) {
+        rgblight_disable_noeeprom();
+        return;
+    }
 
-    if (!rgblight_config.enable) rgblight_enable();
+    if (!rgblight_config.enable) rgblight_enable_noeeprom();
+    if (rgblight_config.mode != 1) rgblight_mode_noeeprom(1);
 
-    rgblight_mode(1);
-    rgblight_setrgb(r, g, b);
+    switch (layer) {
+    case L_QWERTY:
+        if (caps == 0) {
+            // rgblight_disable_noeeprom();
+        } else {
+            rgblight_sethsv_noeeprom_coral();
+        }
+        break;
+    case L_FUNCTION:
+        if (caps == 0) {
+            rgblight_sethsv_noeeprom_turquoise();
+        } else {
+            rgblight_sethsv_noeeprom_magenta();
+        }
+        break;
+    default:
+        rgblight_disable_noeeprom();
+        break;
+    }
 }
 
+// Update layer and set underglow
 uint32_t layer_state_set_user(uint32_t state) {
     int new_layer = biton32(state);
     if (layer != new_layer) {
         layer = new_layer;
-        set_rgb();
+        set_underglow();
     }
     return state;
 }
 
+// Update caps lock status and set underglow
 void led_set_user(uint8_t usb_led) {
     int new_caps = usb_led & (1<<USB_LED_CAPS_LOCK);
     if (caps != new_caps) {
         caps = new_caps;
-        set_rgb();
+        set_underglow();
     }
 }
